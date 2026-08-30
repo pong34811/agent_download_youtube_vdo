@@ -1,0 +1,11 @@
+[project]
+name = "youtube-downloader"
+version = "0.1.0"
+description = "YouTube video downloader - MP4 1080p"
+requires-python = ">=3.9"
+dependencies = [
+    "yt-dlp",
+]
+
+[project.scripts]
+download = "downloader:main"

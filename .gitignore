@@ -1,0 +1,22 @@
+# Downloaded videos
+2026-*/
+
+# Freebuff internal
+.freebuff/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Cookies (sensitive)
+cookies.txt
