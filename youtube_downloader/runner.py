@@ -36,18 +36,28 @@ def build_command(url: str, no_update: bool = False, use_browser_cookies: bool =
     return cmd
 
 
+_browser_cookies_supported: bool = True
+
+
 def run_download(url: str, no_update: bool = False) -> bool:
     """Run yt-dlp for *url* and return True if it exits with code 0.
 
     stdout and stderr are not captured so the user sees yt-dlp's progress
     output in real time. If the initial run fails and browser cookies were used,
-    retries once without browser cookies as a fallback.
+    retries once without browser cookies as a fallback and remembers the failure
+    for the rest of the batch.
     """
-    proc = subprocess.run(build_command(url, no_update=no_update), shell=False)
+    global _browser_cookies_supported
+
+    proc = subprocess.run(
+        build_command(url, no_update=no_update, use_browser_cookies=_browser_cookies_supported),
+        shell=False,
+    )
     if proc.returncode == 0:
         return True
 
-    if not os.path.exists("cookies.txt"):
+    if not os.path.exists("cookies.txt") and _browser_cookies_supported:
+        _browser_cookies_supported = False
         print("  [INFO] Retrying without browser cookies...")
         proc_retry = subprocess.run(
             build_command(url, no_update=no_update, use_browser_cookies=False),
