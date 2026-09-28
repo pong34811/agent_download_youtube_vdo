@@ -27,13 +27,13 @@ def auto_update_ytdlp() -> None:
                 import yt_dlp  # noqa: F401
                 import yt_dlp.version as _v
                 importlib.reload(_v)
-                print(f"⬆️  yt-dlp อัปเดตเป็นเวอร์ชัน {_v.__version__}")
+                print(f"[INFO] yt-dlp updated to version {_v.__version__}")
             except Exception:
-                print("⬆️  yt-dlp อัปเดตสำเร็จ")
+                print("[INFO] yt-dlp updated successfully")
         else:
-            print("✅ yt-dlp เวอร์ชันล่าสุดแล้ว")
+            print("[INFO] yt-dlp is up to date")
     except Exception as exc:
-        print(f"⚠️  ไม่สามารถอัปเดต yt-dlp ได้: {exc}")
+        print(f"[WARNING] Could not update yt-dlp: {exc}")
 
 
 def run_batch(urls: list[str], no_update: bool = False) -> dict[str, bool]:

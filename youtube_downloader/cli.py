@@ -19,6 +19,13 @@ def _print_summary(results: dict[str, bool]) -> None:
 
 def main() -> None:
     """Parse CLI arguments, validate the batch, and run downloads."""
+    if hasattr(sys.stdout, "reconfigure"):
+        try:
+            sys.stdout.reconfigure(errors="replace")
+            sys.stderr.reconfigure(errors="replace")
+        except Exception:
+            pass
+
     raw_args = sys.argv[1:]
 
     # Extract flags
@@ -27,7 +34,7 @@ def main() -> None:
 
     # Interactive mode: no URLs supplied on command line
     if not url_args:
-        print("YouTube Downloader — paste one URL per line, blank line to start")
+        print("YouTube Downloader - paste one URL per line, blank line to start")
         print("(Ctrl+C to cancel)")
         try:
             while True:
