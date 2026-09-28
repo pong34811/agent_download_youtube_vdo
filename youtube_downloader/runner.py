@@ -7,7 +7,7 @@ import sys
 from datetime import datetime
 
 
-def build_command(url: str, no_update: bool = False) -> list[str]:
+def build_command(url: str, no_update: bool = False, use_browser_cookies: bool = True) -> list[str]:
     """Build the argv list to download *url* via yt-dlp.
 
     The command uses ``sys.executable -m yt_dlp`` so the same interpreter and
@@ -28,7 +28,7 @@ def build_command(url: str, no_update: bool = False) -> list[str]:
     ]
     if os.path.exists("cookies.txt"):
         cmd += ["--cookies", "cookies.txt"]
-    else:
+    elif use_browser_cookies:
         cmd += ["--cookies-from-browser", "edge"]
     if no_update:
         cmd.append("--no-update")
@@ -40,7 +40,19 @@ def run_download(url: str, no_update: bool = False) -> bool:
     """Run yt-dlp for *url* and return True if it exits with code 0.
 
     stdout and stderr are not captured so the user sees yt-dlp's progress
-    output in real time.
+    output in real time. If the initial run fails and browser cookies were used,
+    retries once without browser cookies as a fallback.
     """
     proc = subprocess.run(build_command(url, no_update=no_update), shell=False)
-    return proc.returncode == 0
+    if proc.returncode == 0:
+        return True
+
+    if not os.path.exists("cookies.txt"):
+        print("  [INFO] Retrying without browser cookies...")
+        proc_retry = subprocess.run(
+            build_command(url, no_update=no_update, use_browser_cookies=False),
+            shell=False,
+        )
+        return proc_retry.returncode == 0
+
+    return False

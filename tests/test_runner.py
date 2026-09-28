@@ -98,6 +98,19 @@ class TestRunDownload(unittest.TestCase):
             _, kwargs = mock_run.call_args
             self.assertFalse(kwargs.get("shell", False))
 
+    def test_falls_back_without_browser_cookies_if_initial_fails(self):
+        with patch("youtube_downloader.runner.subprocess.run") as mock_run, \
+             patch("youtube_downloader.runner.os.path.exists", return_value=False):
+            mock_run.side_effect = [
+                unittest.mock.MagicMock(returncode=1),
+                unittest.mock.MagicMock(returncode=0),
+            ]
+            result = run_download(self.URL, no_update=True)
+            self.assertTrue(result)
+            self.assertEqual(mock_run.call_count, 2)
+            second_cmd = mock_run.call_args_list[1][0][0]
+            self.assertNotIn("--cookies-from-browser", second_cmd)
+
 
 if __name__ == "__main__":
     unittest.main()
