@@ -4,6 +4,7 @@ from __future__ import annotations
 import subprocess
 import sys
 
+from youtube_downloader.queue import clear_queue, update_item_status
 from youtube_downloader.runner import run_download
 
 
@@ -36,19 +37,55 @@ def auto_update_ytdlp() -> None:
         print(f"[WARNING] Could not update yt-dlp: {exc}")
 
 
-def run_batch(urls: list[str], no_update: bool = False) -> dict[str, bool]:
+def run_batch(
+    urls: list[str],
+    no_update: bool = False,
+    queue_data: dict | None = None,
+    output_dir: str | None = None,
+) -> dict[str, bool]:
     """Download each URL sequentially.  Returns a mapping of url → success.
 
     A failed individual download is logged and the batch continues.
+    If queue_data is provided, progress is saved to disk and KeyboardInterrupt
+    is caught gracefully.
     """
+    if output_dir is None and queue_data is not None:
+        output_dir = queue_data.get("output_dir")
+
     results: dict[str, bool] = {}
     total = len(urls)
+    interrupted = False
+
     for i, url in enumerate(urls, start=1):
         print(f"\n[{i}/{total}] {url}")
-        success = run_download(url, no_update=no_update)
-        results[url] = success
-        if success:
-            print(f"  [OK] Download complete")
-        else:
-            print(f"  [FAIL] Download failed")
+        try:
+            if output_dir is not None:
+                success = run_download(url, no_update=no_update, output_dir=output_dir)
+            else:
+                success = run_download(url, no_update=no_update)
+            results[url] = success
+            if queue_data:
+                status = "completed" if success else "failed"
+                update_item_status(queue_data, url, status)
+
+            if success:
+                print("  [OK] Download complete")
+            else:
+                print("  [FAIL] Download failed")
+        except KeyboardInterrupt:
+            interrupted = True
+            if queue_data:
+                update_item_status(queue_data, url, "pending")
+            print("\n\n[PAUSED] Download paused safely.")
+            print("To resume later, run: python downloader.py --resume")
+            break
+
+    if queue_data and not interrupted:
+        all_completed = all(
+            item.get("status") == "completed"
+            for item in queue_data.get("items", [])
+        )
+        if all_completed:
+            clear_queue()
+
     return results
