@@ -1,7 +1,7 @@
-**Summary:** Develop a resilient, multi-platform CLI tool for archiving YouTube content with automatic metadata preservation and offline sync capabilities.
+Build a desktop agent that downloads user-authorized YouTube videos, audio, subtitles, and metadata into organized local folders.
 
-*   Implement adaptive bitrate selection to prioritize efficient bandwidth usage while maintaining optimal video quality for local storage.
-*   Integrate automated metadata extraction, including chapters, captions, and creator links, to enrich local library entries.
-*   Design a robust resume mechanism to handle interrupted downloads seamlessly without data corruption.
-*   Build a lightweight database indexer to enable rapid local search and filtering across downloaded media.
-*   Ensure compliance with evolving API restrictions by featuring modular authentication strategies for different subscription tiers.
+- Accept single URLs, playlists, or batch input with configurable quality and format.
+- Show download progress, queue management, retries, and clear error messages.
+- Automatically name files using channel, title, date, and selected metadata.
+- Support subtitle selection, thumbnail saving, and duplicate detection.
+- Respect YouTube’s terms, copyright restrictions, and content-access permissions.
