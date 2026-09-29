@@ -7,7 +7,12 @@ import sys
 from datetime import datetime
 
 
-def build_command(url: str, no_update: bool = False, use_browser_cookies: bool = True) -> list[str]:
+def build_command(
+    url: str,
+    no_update: bool = False,
+    use_browser_cookies: bool = True,
+    output_dir: str | None = None,
+) -> list[str]:
     """Build the argv list to download *url* via yt-dlp.
 
     The command uses ``sys.executable -m yt_dlp`` so the same interpreter and
@@ -15,13 +20,13 @@ def build_command(url: str, no_update: bool = False, use_browser_cookies: bool =
     is enforced by never joining into a single string; the URL is always the
     last positional argument and is never interpolated into a shell string.
     """
-    today = datetime.now().strftime("%Y-%m-%d")
+    target_dir = output_dir or datetime.now().strftime("%Y-%m-%d")
     cmd: list[str] = [
         sys.executable, "-m", "yt_dlp",
         "--no-playlist",
         "--format", "bestvideo[height<=1080]+bestaudio/best[height<=1080]",
         "--merge-output-format", "mp4",
-        "-o", f"{today}/%(title)s.%(ext)s",
+        "-o", f"{target_dir}/%(title)s.%(ext)s",
         "--retries", "5",
         "--fragment-retries", "5",
         "--file-access-retries", "5",
@@ -39,7 +44,7 @@ def build_command(url: str, no_update: bool = False, use_browser_cookies: bool =
 _browser_cookies_supported: bool = True
 
 
-def run_download(url: str, no_update: bool = False) -> bool:
+def run_download(url: str, no_update: bool = False, output_dir: str | None = None) -> bool:
     """Run yt-dlp for *url* and return True if it exits with code 0.
 
     stdout and stderr are not captured so the user sees yt-dlp's progress
@@ -50,7 +55,12 @@ def run_download(url: str, no_update: bool = False) -> bool:
     global _browser_cookies_supported
 
     proc = subprocess.run(
-        build_command(url, no_update=no_update, use_browser_cookies=_browser_cookies_supported),
+        build_command(
+            url,
+            no_update=no_update,
+            use_browser_cookies=_browser_cookies_supported,
+            output_dir=output_dir,
+        ),
         shell=False,
     )
     if proc.returncode == 0:
@@ -60,7 +70,7 @@ def run_download(url: str, no_update: bool = False) -> bool:
         _browser_cookies_supported = False
         print("  [INFO] Retrying without browser cookies...")
         proc_retry = subprocess.run(
-            build_command(url, no_update=no_update, use_browser_cookies=False),
+            build_command(url, no_update=no_update, use_browser_cookies=False, output_dir=output_dir),
             shell=False,
         )
         return proc_retry.returncode == 0
