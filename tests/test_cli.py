@@ -158,6 +158,21 @@ class TestCliArgParsing(unittest.TestCase):
         self.assertEqual(urls_passed, [VALID2])
         self.assertEqual(codes, [0])
 
+    def test_cli_handles_keyboard_interrupt_gracefully(self):
+        import youtube_downloader.cli as cli_module
+        exit_codes = []
+        stdout_io = StringIO()
+        with patch("sys.argv", ["downloader"]), \
+             patch("youtube_downloader.cli.load_queue", return_value=None), \
+             patch("builtins.input", side_effect=KeyboardInterrupt), \
+             patch("sys.stdout", stdout_io):
+            try:
+                cli_module.main()
+            except SystemExit as exc:
+                exit_codes.append(exc.code)
+        self.assertIn("Cancelled.", stdout_io.getvalue())
+        self.assertEqual(exit_codes, [1])
+
 
 if __name__ == "__main__":
     unittest.main()

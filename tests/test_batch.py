@@ -81,6 +81,20 @@ class TestRunBatch(unittest.TestCase):
             run_batch([self.URL1], queue_data=queue_data)
             mock_clear.assert_called_once()
 
+    def test_run_batch_leaves_queue_on_failure(self):
+        queue_data = {
+            "created_at": "2026-09-29T00:00:00",
+            "output_dir": "2026-09-29",
+            "items": [
+                {"url": self.URL1, "status": "pending"},
+            ],
+        }
+        with patch("youtube_downloader.batch.run_download", return_value=False), \
+             patch("youtube_downloader.batch.clear_queue") as mock_clear, \
+             patch("youtube_downloader.queue.save_queue"):
+            run_batch([self.URL1], queue_data=queue_data)
+            mock_clear.assert_not_called()
+
     def test_run_batch_handles_keyboard_interrupt(self):
         queue_data = {
             "created_at": "2026-09-29T00:00:00",
