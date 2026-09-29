@@ -20,3 +20,6 @@ Thumbs.db
 
 # Cookies (sensitive)
 cookies.txt
+
+# Download queue (local state)
+.download_queue.json
