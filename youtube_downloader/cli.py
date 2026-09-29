@@ -4,6 +4,12 @@ from __future__ import annotations
 import sys
 
 from youtube_downloader.batch import auto_update_ytdlp, run_batch
+from youtube_downloader.queue import (
+    clear_queue,
+    create_queue,
+    get_pending_urls,
+    load_queue,
+)
 from youtube_downloader.validator import validate_batch
 
 
@@ -30,9 +36,68 @@ def main() -> None:
 
     # Extract flags
     no_update = "--no-update" in raw_args
+    resume = "--resume" in raw_args
     url_args = [a for a in raw_args if not a.startswith("--")]
 
-    # Interactive mode: no URLs supplied on command line
+    # 1. Explicit --resume flow
+    if resume:
+        queue_data = load_queue()
+        if not queue_data:
+            print("[INFO] No unfinished download session found.")
+            sys.exit(0)
+
+        pending_urls = get_pending_urls(queue_data)
+        if not pending_urls:
+            print("[INFO] No unfinished download session found.")
+            clear_queue()
+            sys.exit(0)
+
+        if not no_update:
+            auto_update_ytdlp()
+
+        output_dir = queue_data.get("output_dir")
+        results = run_batch(
+            pending_urls,
+            no_update=no_update,
+            queue_data=queue_data,
+            output_dir=output_dir,
+        )
+        _print_summary(results)
+        sys.exit(0 if all(results.values()) else 1)
+
+    # 2. Check for unfinished queue before starting a new batch
+    existing_queue = load_queue()
+    if existing_queue:
+        pending_urls = get_pending_urls(existing_queue)
+        if pending_urls:
+            created = existing_queue.get("created_at", "earlier session")
+            count = len(pending_urls)
+            try:
+                ans = input(
+                    f"Found unfinished download session from {created} ({count} items pending). Resume? [Y/n]: "
+                ).strip().lower()
+            except (KeyboardInterrupt, EOFError):
+                print("\nCancelled.")
+                sys.exit(0)
+
+            if ans in ("", "y", "yes"):
+                if not no_update:
+                    auto_update_ytdlp()
+                output_dir = existing_queue.get("output_dir")
+                results = run_batch(
+                    pending_urls,
+                    no_update=no_update,
+                    queue_data=existing_queue,
+                    output_dir=output_dir,
+                )
+                _print_summary(results)
+                sys.exit(0 if all(results.values()) else 1)
+            else:
+                clear_queue()
+        else:
+            clear_queue()
+
+    # 3. Interactive mode: no URLs supplied on command line
     if not url_args:
         print("YouTube Downloader - paste one URL per line, blank line to start")
         print("(Ctrl+C to cancel)")
@@ -57,7 +122,14 @@ def main() -> None:
     if not no_update:
         auto_update_ytdlp()
 
-    results = run_batch(urls, no_update=no_update)
+    queue_data = create_queue(urls)
+    output_dir = queue_data.get("output_dir")
+    results = run_batch(
+        urls,
+        no_update=no_update,
+        queue_data=queue_data,
+        output_dir=output_dir,
+    )
     _print_summary(results)
 
     if all(results.values()):
