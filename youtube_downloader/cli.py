@@ -11,6 +11,28 @@ from youtube_downloader.queue import (
     load_queue,
 )
 from youtube_downloader.validator import validate_batch
+from youtube_downloader.playlist import resolve_playlist, is_playlist_url
+
+
+def _expand_urls(urls: list[str]) -> list[str]:
+    """Resolve any playlist URLs into individual video URLs.
+
+    Playlist URLs are expanded *before* validation and queue creation so
+    that the queue, deduplication, the 10-item batch limit, and resume all
+    operate at the per-video level.  A resolution failure rejects the whole
+    batch with a clear message.
+    """
+    expanded: list[str] = []
+    for url in urls:
+        if is_playlist_url(url):
+            try:
+                expanded.extend(resolve_playlist(url))
+            except RuntimeError as exc:
+                print(f"[ERROR] Could not resolve playlist {url}: {exc}")
+                raise SystemExit(1)
+        else:
+            expanded.append(url)
+    return expanded
 
 
 def _print_summary(results: dict[str, bool]) -> None:
@@ -112,6 +134,15 @@ def main() -> None:
             sys.exit(1)
 
     urls, errors = validate_batch(url_args)
+
+    if errors:
+        print("Input rejected:")
+        for msg in errors:
+            print(f"  - {msg}")
+        sys.exit(1)
+
+    urls = _expand_urls(urls)
+    urls, errors = validate_batch(urls)
 
     if errors:
         print("Input rejected:")
