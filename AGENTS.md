@@ -1,25 +1,22 @@
 # AGENTS.md
 
-This is a fresh repository — no code, config, or tooling has been set up yet.
+## Project
 
-## Current state
+Python CLI for downloading individual YouTube videos with `yt-dlp`.
 
-- Empty project directory named `youtube-download-2026`
-- No package manager, framework, or language chosen
-- No build, test, lint, or formatter configuration exists
-- No CI, git hooks, or task runner configured
+- Supported Python: 3.10+ (`pyproject.toml`).
+- Runtime dependency: `yt-dlp`.
+- Entry points: `python downloader.py` (compatibility launcher) and installed `download` command.
+- Downloads: MP4 merge output, best available video up to 1080p, saved under a `YYYY-MM-DD/` folder in the working directory.
+- Batches: up to 10 unique HTTP(S) YouTube URLs, processed sequentially; playlist URLs expand to their individual videos before the limit, deduplication, and queue are applied.
+- Queue state: `.download_queue.json` in the working directory; `--resume` resumes pending/failed items in the original output folder. Starting a new run detects an unfinished queue and asks whether to resume it.
+- Cookies: uses local `cookies.txt` if present; otherwise attempts Microsoft Edge browser cookies, then retries without browser cookies if that attempt fails. Never expose cookie contents or bypass access restrictions.
+- Playlists: a `playlist?list=...` URL expands to its individual videos before the batch limit, deduplication, and queue are applied.
 
-## Guidance for future sessions
+## Development
 
-- This repo does not have established conventions. Propose a stack that fits a YouTube downloader tool and confirm with the user before writing code.
-- Do not assume any dependencies exist. Run `pip install yt-dlp` after setup.
-- Do not create files that assume a specific stack (Node.js, Python, Rust, etc.) without user confirmation.
-- After setup, update this file with verified commands and conventions.
-
-## Project: YouTube Downloader (CLI)
-
-- **Language:** Python 3.9+
-- **Framework:** yt-dlp (CLI tool)
-- **Usage:** `python downloader.py` then paste URL when prompted
-- **Output:** `.mp4` file in current directory (1080p)
-- **Install:** `pip install yt-dlp`
+- Install: `python -m pip install -e .`
+- Run: `python downloader.py [--no-update] [--resume] [URL ...]`
+- Test: `python -m unittest discover -v`
+- There is no configured formatter, linter, or CI workflow; do not claim one is configured.
+- Preserve existing project conventions and avoid committing downloaded media, cookies, or local queue state.
