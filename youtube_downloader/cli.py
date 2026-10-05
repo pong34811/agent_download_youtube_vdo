@@ -59,7 +59,21 @@ def main() -> None:
     # Extract flags
     no_update = "--no-update" in raw_args
     resume = "--resume" in raw_args
-    url_args = [a for a in raw_args if not a.startswith("--")]
+    output_dir_flag = None
+    cleaned_args = []
+    skip_next = False
+    for i, a in enumerate(raw_args):
+        if skip_next:
+            skip_next = False
+            continue
+        if a == "--output-dir" and i + 1 < len(raw_args):
+            output_dir_flag = raw_args[i + 1]
+            skip_next = True
+        elif a.startswith("--output-dir="):
+            output_dir_flag = a.split("=", 1)[1]
+        elif a != "--output-dir":
+            cleaned_args.append(a)
+    url_args = [a for a in cleaned_args if not a.startswith("--")]
 
     # 1. Explicit --resume flow
     if resume:
@@ -153,7 +167,10 @@ def main() -> None:
     if not no_update:
         auto_update_ytdlp()
 
-    queue_data = create_queue(urls)
+    if output_dir_flag is not None:
+        queue_data = create_queue(urls, output_dir=output_dir_flag)
+    else:
+        queue_data = create_queue(urls)
     output_dir = queue_data.get("output_dir")
     results = run_batch(
         urls,

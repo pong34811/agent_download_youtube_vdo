@@ -268,5 +268,55 @@ class TestCliPlaylistResolution(unittest.TestCase):
         self.assertEqual(codes, [0])
 
 
+class TestCliOutputDir(unittest.TestCase):
+    """--output-dir forces the download folder regardless of date."""
+
+    def _run_main(self, argv, batch_results=None, resolve_return=None):
+        if batch_results is None:
+            batch_results = {}
+        if resolve_return is None:
+            resolve_return = []
+        import youtube_downloader.cli as cli_module
+        exit_codes = []
+        stdout_io = StringIO()
+        with patch("sys.argv", ["downloader"] + argv), \
+             patch("youtube_downloader.cli.auto_update_ytdlp"), \
+             patch("youtube_downloader.cli.run_batch", return_value=batch_results) as mock_batch, \
+             patch("youtube_downloader.cli.load_queue", return_value=None), \
+             patch("youtube_downloader.cli.clear_queue"), \
+             patch("youtube_downloader.cli.resolve_playlist", return_value=resolve_return) as mock_resolve, \
+             patch("sys.stdout", stdout_io), \
+             patch("builtins.input", return_value=""):
+            try:
+                cli_module.main()
+            except SystemExit as exc:
+                exit_codes.append(exc.code)
+        return mock_batch, exit_codes, stdout_io.getvalue()
+
+    def test_output_dir_flag_passed_to_batch(self):
+        mock_batch, _, _ = self._run_main(
+            ["--output-dir", "MyFolder", "https://www.youtube.com/watch?v=v1"],
+            batch_results={"https://www.youtube.com/watch?v=v1": True},
+        )
+        self.assertEqual(mock_batch.call_args[1].get("output_dir"), "MyFolder")
+
+    def test_output_dir_equals_sign_passed_to_batch(self):
+        mock_batch, _, _ = self._run_main(
+            ["--output-dir=MyFolder", "https://www.youtube.com/watch?v=v1"],
+            batch_results={"https://www.youtube.com/watch?v=v1": True},
+        )
+        self.assertEqual(mock_batch.call_args[1].get("output_dir"), "MyFolder")
+
+    def test_output_dir_uses_resolve_expanded_urls(self):
+        mock_batch, _, _ = self._run_main(
+            ["--output-dir", "MyFolder", "https://www.youtube.com/playlist?list=PLx"],
+            batch_results={"https://www.youtube.com/watch?v=v1": True},
+            resolve_return=["https://www.youtube.com/watch?v=v1"],
+        )
+        self.assertEqual(mock_batch.call_args[1].get("output_dir"), "MyFolder")
+        urls_passed = mock_batch.call_args[0][0]
+        self.assertEqual(urls_passed, ["https://www.youtube.com/watch?v=v1"])
+
+
 if __name__ == "__main__":
     unittest.main()
