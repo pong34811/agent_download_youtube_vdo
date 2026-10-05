@@ -44,10 +44,16 @@ class TestValidateBatch(unittest.TestCase):
         self.assertEqual(len(result), 10)
         self.assertEqual(errors, [])
 
-    def test_eleven_urls_rejected(self):
+    def test_eleven_urls_accepted(self):
         urls = [f"https://www.youtube.com/watch?v=vid{i}" for i in range(11)]
+        result, errors = validate_batch(urls)
+        self.assertEqual(len(result), 11)
+        self.assertEqual(errors, [])
+
+    def test_twenty_three_urls_rejected(self):
+        urls = [f"https://www.youtube.com/watch?v=vid{i}" for i in range(23)]
         _, errors = validate_batch(urls)
-        self.assertTrue(any("10" in e for e in errors))
+        self.assertTrue(any("22" in e for e in errors))
 
     def test_invalid_url_produces_error(self):
         _, errors = validate_batch(["https://vimeo.com/123"])
@@ -68,6 +74,18 @@ class TestValidateBatch(unittest.TestCase):
         result, errors = validate_batch(urls)
         self.assertEqual(errors, [])
         self.assertEqual(result, ["https://www.youtube.com/watch?v=abc123"])
+
+    def test_twenty_two_valid_urls_accepted(self):
+        # Playlist with 22 videos must be accepted (limit raised to 22).
+        urls = [f"https://www.youtube.com/watch?v=v{i}" for i in range(22)]
+        result, errors = validate_batch(urls)
+        self.assertEqual(len(result), 22)
+        self.assertEqual(errors, [])
+
+    def test_twenty_three_urls_rejected(self):
+        urls = [f"https://www.youtube.com/watch?v=v{i}" for i in range(23)]
+        _, errors = validate_batch(urls)
+        self.assertTrue(any("22" in e for e in errors))
 
 
 if __name__ == "__main__":

@@ -60,8 +60,8 @@ class TestCliArgParsing(unittest.TestCase):
         mock_batch, _, _, _, _ = self._run_main(["https://vimeo.com/123"])
         mock_batch.assert_not_called()
 
-    def test_eleven_urls_exits_nonzero(self):
-        urls = [f"https://www.youtube.com/watch?v=v{i}" for i in range(11)]
+    def test_twenty_three_urls_exits_nonzero(self):
+        urls = [f"https://www.youtube.com/watch?v=v{i}" for i in range(23)]
         _, codes, _, _, _ = self._run_main(urls)
         self.assertEqual(codes, [1])
 
@@ -220,16 +220,16 @@ class TestCliPlaylistResolution(unittest.TestCase):
         self.assertEqual(urls_passed, vids)
 
     def test_playlist_url_expanded_before_validation(self):
-        # A playlist that expands to more than 10 videos must be rejected
-        # by the existing limit check, with exit code 1 and no batch call.
+        # A playlist that expands to more than 22 videos must be rejected
+        # by the limit check, with exit code 1 and no batch call.
         playlist = "https://www.youtube.com/playlist?list=PLx"
-        many = [f"https://www.youtube.com/watch?v=v{i}" for i in range(11)]
+        many = [f"https://www.youtube.com/watch?v=v{i}" for i in range(23)]
         mock_batch, codes, _, stdout = self._run_main(
             [playlist], resolve_return=many,
         )
         self.assertEqual(codes, [1])
         mock_batch.assert_not_called()
-        self.assertIn("10", stdout)
+        self.assertIn("22", stdout)
 
     def test_playlist_and_single_urls_combined(self):
         playlist = "https://www.youtube.com/playlist?list=PLx"

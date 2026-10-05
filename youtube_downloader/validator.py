@@ -44,9 +44,9 @@ def validate_batch(urls: list[str]) -> tuple[list[str], list[str]]:
         errors.append("No URLs provided. Please supply at least one YouTube URL.")
         return [], errors
 
-    if len(unique) > 10:
+    if len(unique) > 22:
         errors.append(
-            f"Too many URLs: {len(unique)} supplied but the maximum batch size is 10."
+            f"Too many URLs: {len(unique)} supplied but the maximum batch size is 22."
         )
 
     invalid = [u for u in unique if not is_valid_youtube_url(u)]
