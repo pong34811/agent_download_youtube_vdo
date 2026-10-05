@@ -26,7 +26,7 @@ def build_command(
         "--no-playlist",
         "--format", "bestvideo[height<=1080]+bestaudio/best[height<=1080]",
         "--merge-output-format", "mp4",
-        "-o", f"{target_dir}/%(title)s.%(ext)s",
+        "-o", f"{target_dir}/%(id)s-%(title)s.%(ext)s",
         "--retries", "5",
         "--fragment-retries", "5",
         "--file-access-retries", "5",

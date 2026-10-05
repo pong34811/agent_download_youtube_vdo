@@ -76,17 +76,26 @@ class TestBuildCommand(unittest.TestCase):
         self.assertEqual(self.cmd[idx + 1], "5")
 
 
+    def test_output_template_includes_video_id_for_uniqueness(self):
+        with patch("youtube_downloader.runner.os.path.exists", return_value=False):
+            cmd = build_command(self.URL)
+        idx = cmd.index("-o")
+        template = cmd[idx + 1]
+        # %(id)s guarantees unique filenames when titles collide (e.g. playlist
+        # entries with identical titles).
+        self.assertIn("%(id)s", template)
+
     def test_build_command_with_custom_output_dir(self):
         cmd = build_command(self.URL, output_dir="custom_folder")
         idx = cmd.index("-o")
-        self.assertEqual(cmd[idx + 1], "custom_folder/%(title)s.%(ext)s")
+        self.assertEqual(cmd[idx + 1], "custom_folder/%(id)s-%(title)s.%(ext)s")
 
     def test_build_command_default_output_dir(self):
         cmd = build_command(self.URL)
         idx = cmd.index("-o")
         import datetime
         today = datetime.datetime.now().strftime("%Y-%m-%d")
-        self.assertEqual(cmd[idx + 1], f"{today}/%(title)s.%(ext)s")
+        self.assertEqual(cmd[idx + 1], f"{today}/%(id)s-%(title)s.%(ext)s")
 
 
 class TestRunDownload(unittest.TestCase):
@@ -98,7 +107,7 @@ class TestRunDownload(unittest.TestCase):
             run_download(self.URL, no_update=True, output_dir="saved_folder")
             cmd = mock_run.call_args[0][0]
             idx = cmd.index("-o")
-            self.assertEqual(cmd[idx + 1], "saved_folder/%(title)s.%(ext)s")
+            self.assertEqual(cmd[idx + 1], "saved_folder/%(id)s-%(title)s.%(ext)s")
 
     def test_returns_true_on_zero_exit(self):
         with patch("youtube_downloader.runner.subprocess.run") as mock_run:
